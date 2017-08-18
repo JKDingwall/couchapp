@@ -121,6 +121,7 @@ class Config(object):
     # TODO: add oauth management
     def get_dbs(self, db_string=None):
         db_string = db_string or ''
+        client_opts = {}
         if db_string.startswith("http://") or \
                 db_string.startswith("https://") or \
                 db_string.startswith("desktopcouch://"):
@@ -131,19 +132,21 @@ class Config(object):
                 # get default db if it exists
                 if 'default' in env:
                     dburls = env['default']['db']
+                    client_opts = env['default'].get("client_opts", client_opts)
                 else:
                     raise AppError("database isn't specified")
             else:
                 dburls = "%s/%s" % (self.DEFAULT_SERVER_URI, db_string)
                 if db_string in env:
                     dburls = env[db_string].get('db', dburls)
+                    client_opts = env[db_string].get("client_opts", client_opts)
         
         if isinstance(dburls, basestring):
             dburls = [dburls]
 
         use_proxy = os.environ.get("http_proxy", "") != "" or os.environ.get("https_proxy", "") != ""
 
-        return [Database(dburl, use_proxy=use_proxy) for dburl in dburls]
+        return [Database(dburl, use_proxy=use_proxy, **client_opts) for dburl in dburls]
         
     def get_app_name(self, dbstring=None, default=None):
         env = self.conf.get('env', {})
